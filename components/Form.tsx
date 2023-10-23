@@ -1,3 +1,4 @@
+import { Status, statuses } from "@/app/type";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -10,9 +11,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { shitcoins } from "@/lib/constants";
 import { useQuery } from "@tanstack/react-query";
 import { Globe } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import ReceiveForm from "./ReceiveForm";
 import SendForm from "./SendForm";
+import { Progress } from "./ui/progress";
 import { Skeleton } from "./ui/skeleton";
 
 function LoadingSkeleton() {
@@ -36,6 +38,11 @@ export default function ExchangeForm() {
   const [shitcoin, setShitcoin] = useState<(typeof shitcoins)[number]["code"]>(
     shitcoins[0].code,
   );
+  const [order, setOrder] = useState<{
+    token: string;
+    id: string;
+  } | null>(null);
+  const [status, setStatus] = useState(Status.NEW);
 
   const { data, isLoading } = useQuery({
     queryKey: ["prices", { action, shitcoin }],
@@ -61,6 +68,29 @@ export default function ExchangeForm() {
       return res.data;
     },
   });
+
+  useEffect(() => {
+    if (order) {
+      const pollInterval = setInterval(() => {
+        if (status === Status.DONE || status === Status.EMERGENCY) {
+          clearInterval(pollInterval);
+          return;
+        }
+
+        fetch(`/api/status?id=${order.id}&token=${order.token}`)
+          .then((r) => r.json())
+          .then((res) => {
+            if (res?.data?.status) {
+              setStatus(Status[res.data.status as keyof typeof Status]);
+            }
+          });
+      }, 5000);
+
+      return () => {
+        clearInterval(pollInterval);
+      };
+    }
+  }, [order]);
 
   return (
     <div className="flex flex-row justify-center p-4 min-w-[280px] w-full min-w-0">
@@ -137,6 +167,7 @@ export default function ExchangeForm() {
               min={data.from.min}
               max={data.from.max}
               shitcoin={shitcoin}
+              setOrder={setOrder}
             />
           )}
         </TabsContent>
@@ -154,9 +185,31 @@ export default function ExchangeForm() {
               min={data.from.min}
               max={data.from.max}
               shitcoin={shitcoin}
+              setOrder={setOrder}
             />
           )}
         </TabsContent>
+
+        {order ? (
+          <div className="flex flex-col gap-2 justify-center mt-8">
+            <span className="font-bold text-md text-center">
+              Progress: {statuses.find((x) => x.type === status)?.type}
+            </span>
+            <Progress
+              value={
+                status === Status.EMERGENCY
+                  ? 100
+                  : (statuses.findIndex((x) => x.type === status) /
+                      (statuses.length - 3)) *
+                    100
+              }
+              className="w-full"
+            />
+            <span className="text-muted-foreground text-sm text-center">
+              {statuses.find((x) => x.type === status)?.description}
+            </span>
+          </div>
+        ) : null}
       </Tabs>
     </div>
   );

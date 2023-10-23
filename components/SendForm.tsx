@@ -31,10 +31,12 @@ export default function SendForm({
   min,
   max,
   shitcoin,
+  setOrder,
 }: {
   min: number;
   max: number;
   shitcoin: string;
+  setOrder: (order: { token: string; id: string }) => void;
 }) {
   const [scanning, setScanning] = useState(false);
   const { toast } = useToast();
@@ -70,6 +72,13 @@ export default function SendForm({
         });
 
         return;
+      }
+
+      if (data?.id) {
+        setOrder({
+          id: data.id,
+          token: data.token,
+        });
       }
 
       if (typeof window.webln !== "undefined") {

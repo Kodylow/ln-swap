@@ -26,10 +26,12 @@ export default function ReceiveForm({
   shitcoin,
   min,
   max,
+  setOrder,
 }: {
   shitcoin: string;
   min: number;
   max: number;
+  setOrder: (order: { token: string; id: string }) => void;
 }) {
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
@@ -79,6 +81,10 @@ export default function ReceiveForm({
               });
             } else {
               setOpen(true);
+              setOrder({
+                id: res.data.id,
+                token: res.data.token,
+              });
               return res;
             }
           } catch (e) {

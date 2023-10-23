@@ -42,6 +42,8 @@ export async function POST(req: Request) {
         contractAddress: contractAddr,
         recipientAddress: addr,
         amount,
+        token: data.data.token,
+        id: data.data.id,
       },
     });
   } else {

@@ -34,6 +34,8 @@ export async function POST(req: Request) {
   return NextResponse.json({
     data: {
       invoice: data.data.from.address,
+      token: data.data.token,
+      id: data.data.id,
     },
   });
 }
